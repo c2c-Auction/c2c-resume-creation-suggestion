@@ -1,3 +1,5 @@
+from werkzeug.utils import secure_filename
+from flask import jsonify
 import logging
 from typing import Dict, Any, List, Tuple
 from flask import Flask, request, render_template, redirect, url_for, flash, session
@@ -93,6 +95,59 @@ Personal Projects
 Additional Information Relevant to the Job
 """
 
+def extract_pdf_with_progress(filepath):
+    loader = PyPDFLoader(file_path=filepath)
+    pages = loader.load_and_split()
+    total_pages = len(pages)
+    text = ""
+    for i, page in enumerate(pages):
+        text += page.page_content + " "
+        yield (i + 1) / total_pages * 100
+
+    content = f"{pdf_prompt} here is the content of resume {text}"
+    return a.final(content)
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file-upload' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['file-upload']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    if file and file.filename.endswith('.pdf'):
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        
+        def generate():
+            extracted_data = None
+            for progress in extract_pdf_with_progress(filepath):
+                if isinstance(progress, float):
+                    yield f"data:{json.dumps({'progress': progress})}\n\n"
+                else:
+                    extracted_data = progress
+            
+            if extracted_data:
+                extracted_data_file = save_to_temp_file(extracted_data)
+                session['extracted_data_file'] = extracted_data_file
+                session['file_path'] = filepath
+
+                # Generate questions here
+                job_description = session.get('job_description', '')
+                additional_info = session.get('additional_info', '')
+                question = ques(extracted_data, job_description, additional_info)
+                q = a.final(question)
+                questions = extract_between_asterisks(q)
+                questions_file = save_to_temp_file(questions)
+                session['questions_file'] = questions_file
+
+                yield f"data:{json.dumps({'redirect': url_for('questionnaire', step=1)})}\n\n"
+            else:
+                yield f"data:{json.dumps({'error': 'Failed to extract data from PDF'})}\n\n"
+
+        return app.response_class(generate(), mimetype='text/event-stream')
+    else:
+        return jsonify({'error': 'Invalid file type'}), 400
+    
 def ques(user_resume: str, job_description: str, work: str) -> str:
     return f"""
     You're an AI with a talent for crafting thoughtful prompts to extract necessary details from users for creating tailored resumes. Your task is to ask the user for three specific questions based on their provided resume, job description, and additional work information to generate a new resume.
@@ -112,16 +167,6 @@ def extract_between_asterisks(text: str) -> List[str]:
     pattern = r'\*\*(.*?)\*\*'
     return re.findall(pattern, text)
 
-def input_pdf_setup(uploaded_file) -> Tuple[str, str]:
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], uploaded_file.filename)
-    uploaded_file.save(filepath)
-    loader = PyPDFLoader(file_path=filepath)
-    pages = loader.load_and_split()
-    if len(pages) < 1:
-        raise ValueError("The PDF file has no pages.")
-    text = " ".join([page.page_content for page in pages])
-    content = f"{pdf_prompt} here is the content of resume {text}"
-    return a.final(content), filepath
 
 def save_to_temp_file(data: Any) -> str:
     with tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8') as temp_file:
@@ -160,11 +205,9 @@ def process_prompt(prompt: str) -> Dict[str, Any]:
         else:
             return {"error": "No valid JSON found in response"}
         
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        file = request.files.get('file-upload')
         job_description = request.form.get('jobDescription')
         experience = request.form.get('experience')
         additional_info = request.form.get('additionalInfo')
@@ -177,29 +220,11 @@ def index():
             flash('Job description is required.', 'error')
             return render_template('index.html', job_description=job_description, additional_info=additional_info)
 
-        if file and file.filename.endswith('.pdf'):
-            try:
-                extracted_data, file_path = input_pdf_setup(file)
-                extracted_data_file = save_to_temp_file(extracted_data)
-                session['extracted_data_file'] = extracted_data_file
-                session['job_description'] = job_description
-                session['experience'] = experience
-                session['additional_info'] = additional_info
-                session['file_path'] = file_path
+        session['job_description'] = job_description
+        session['experience'] = experience
+        session['additional_info'] = additional_info
 
-                question = ques(extracted_data, job_description, additional_info)
-                q = a.final(question)
-
-                questions = extract_between_asterisks(q)
-                questions_file = save_to_temp_file(questions)
-                session['questions_file'] = questions_file
-                
-                return redirect(url_for('questionnaire', step=1))
-            except Exception as e:
-                flash(str(e), 'error')
-                return render_template('index.html', job_description=job_description, additional_info=additional_info)
-        else:
-            flash('Please upload a PDF file.', 'error')
+        return render_template('index.html', job_description=job_description, additional_info=additional_info)
     
     return render_template('index.html')
 
