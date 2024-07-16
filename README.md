@@ -1,1 +1,0 @@
-# c2c-resume-creation-suggestion
