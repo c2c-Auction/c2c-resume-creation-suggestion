@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium AI Resume Builder Results</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {"50":"#eff6ff","100":"#dbeafe","200":"#bfdbfe","300":"#93c5fd","400":"#60a5fa","500":"#3b82f6","600":"#2563eb","700":"#1d4ed8","800":"#1e40af","900":"#1e3a8a","950":"#172554"}
+                    }
+                },
+                fontFamily: {
+                    'body': [
+                        'Inter', 
+                        'ui-sans-serif', 
+                        'system-ui', 
+                        '-apple-system', 
+                        'system-ui', 
+                        'Segoe UI', 
+                        'Roboto', 
+                        'Helvetica Neue', 
+                        'Arial', 
+                        'Noto Sans', 
+                        'sans-serif', 
+                        'Apple Color Emoji', 
+                        'Segoe UI Emoji', 
+                        'Segoe UI Symbol', 
+                        'Noto Color Emoji'
+                    ],
+                    'sans': [
+                        'Inter', 
+                        'ui-sans-serif', 
+                        'system-ui', 
+                        '-apple-system', 
+                        'system-ui', 
+                        'Segoe UI', 
+                        'Roboto', 
+                        'Helvetica Neue', 
+                        'Arial', 
+                        'Noto Sans', 
+                        'sans-serif', 
+                        'Apple Color Emoji', 
+                        'Segoe UI Emoji', 
+                        'Segoe UI Symbol', 
+                        'Noto Color Emoji'
+                    ]
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .gradient-bg {
+            background: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .coffee-btn {
+            background-color: #FFDD00;
+            color: #000000;
+            transition: all 0.3s ease;
+        }
+        .coffee-btn:hover {
+            background-color: #FFE44D;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen font-body text-gray-800">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <div class="bg-white shadow-2xl rounded-3xl overflow-hidden">
+            <div class="bg-primary-600 p-8 text-white text-center">
+                <h1 class="text-4xl font-bold mb-2">Your Premium AI-Generated Resume</h1>
+                <p class="text-primary-200">Tailored for success, crafted with precision</p>
+            </div>
+            
+            <div class="p-6 md:p-8 space-y-8">
+                <!-- Job Description Section -->
+                <div class="card p-6 md:p-8">
+                    <h2 class="text-2xl font-semibold mb-4 text-primary-800 border-b-2 border-primary-200 pb-2">Job Description</h2>
+                    <p class="text-gray-700">{{ job_description }}</p>
+                </div>
+
+                <!-- Profile Summary -->
+                <div class="card p-6 md:p-8">
+                    <h2 class="text-2xl font-semibold mb-4 text-primary-800 border-b-2 border-primary-200 pb-2">Profile Summary</h2>
+                    <p class="text-gray-700 mb-4">{{ profile_creator_result.summary }}</p>
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded-r">
+                        <p class="text-sm text-yellow-800">
+                            <strong>AI Reasoning:</strong> {{ profile_creator_result.Reasonof_output_matching }}
+                        </p>
+                    </div>
+                    <button class="copy-btn bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-full transition duration-300 flex items-center justify-center w-full" data-clipboard-text="{{ profile_creator_result.summary }}">
+                        <i class="fas fa-copy mr-2"></i>
+                        Copy Summary
+                    </button>
+                </div>
+
+                <!-- Technical and Soft Skills -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="card p-6 md:p-8">
+                        <h2 class="text-2xl font-semibold mb-4 text-primary-800 border-b-2 border-primary-200 pb-2">Technical Skills</h2>
+                        <ul class="list-disc list-inside text-gray-700 mb-4 space-y-2">
+                            {% for skill in technical_skills_result.technical_skills %}
+                                <li>{{ skill }}</li>
+                            {% endfor %}
+                        </ul>
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded-r">
+                            <p class="text-sm text-yellow-800">
+                                <strong>AI Reasoning:</strong> {{ technical_skills_result.Reasonof_output_matching }}
+                            </p>
+                        </div>
+                        <button class="copy-btn bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-full transition duration-300 flex items-center justify-center w-full" data-clipboard-text="{{ technical_skills_result.technical_skills|join(', ') }}">
+                            <i class="fas fa-copy mr-2"></i>
+                            Copy Technical Skills
+                        </button>
+                    </div>
+
+                    <div class="card p-6 md:p-8">
+                        <h2 class="text-2xl font-semibold mb-4 text-primary-800 border-b-2 border-primary-200 pb-2">Soft Skills</h2>
+                        <ul class="list-disc list-inside text-gray-700 mb-4 space-y-2">
+                            {% for skill in soft_skills_result.soft_skills %}
+                                <li>{{ skill }}</li>
+                            {% endfor %}
+                        </ul>
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded-r">
+                            <p class="text-sm text-yellow-800">
+                                <strong>AI Reasoning:</strong> {{ soft_skills_result.Reasonof_output_matching }}
+                            </p>
+                        </div>
+                        <button class="copy-btn bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-full transition duration-300 flex items-center justify-center w-full" data-clipboard-text="{{ soft_skills_result.soft_skills|join(', ') }}">
+                            <i class="fas fa-copy mr-2"></i>
+                            Copy Soft Skills
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Work Experience Section -->
+                <div class="card p-6 md:p-8">
+                    <h2 class="text-2xl font-semibold mb-4 text-primary-800 border-b-2 border-primary-200 pb-2">Work Experience</h2>
+                    {% if experience_result and experience_result.get('experiences') %}
+                        {% for exp in experience_result.experiences %}
+                            <div class="mb-6 last:mb-0">
+                                <h3 class="text-xl font-medium text-primary-700">{{ exp }}</h3>
+                                {% if experience_result.get('experience_details') %}
+                                    <p class="text-gray-700 mt-2">{{ experience_result.experience_details[loop.index0] }}</p>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-gray-700">No work experience available.</p>
+                    {% endif %}
+                    {% if experience_result and experience_result.get('Reasonof_output_matching') %}
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded-r">
+                            <p class="text-sm text-yellow-800">
+                                <strong>AI Reasoning:</strong> {{ experience_result.Reasonof_output_matching }}
+                            </p>
+                        </div>
+                    {% endif %}
+                    <button class="copy-btn bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-full transition duration-300 flex items-center justify-center w-full mt-4" data-clipboard-text="{{ experience_result.get('experiences', [])|join('\n') }}">
+                        <i class="fas fa-copy mr-2"></i>
+                        Copy Work Experience
+                    </button>
+                </div>
+
+                <!-- Projects Section -->
+                <div class="card p-6 md:p-8">
+                    <h2 class="text-2xl font-semibold mb-4 text-primary-800 border-b-2 border-primary-200 pb-2">Projects</h2>
+                    {% if project_result and project_result.get('project') %}
+                        {% for project in project_result.project %}
+                            <div class="mb-6 last:mb-0">
+                                <h3 class="text-xl font-medium text-primary-700">{{ project }}</h3>
+                                {% if project_result.project_details %}
+                                    <p class="text-gray-700 mt-2">{{ project_result.project_details[loop.index0] }}</p>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-gray-700">No projects available.</p>
+                    {% endif %}
+                    {% if project_result and project_result.get('Reasonof_output_matching') %}
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded-r">
+                            <p class="text-sm text-yellow-800">
+                                <strong>AI Reasoning:</strong> {{ project_result.Reasonof_output_matching }}
+                            </p>
+                        </div>
+                    {% endif %}
+                    <button class="copy-btn bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-full transition duration-300 flex items-center justify-center w-full mt-4" data-clipboard-text="{% if project_result and project_result.get('project') %}{% for project in project_result.project %}{{ project }}: {{ project_result.project_details[loop.index0] }}{% endfor %}{% endif %}">
+                        <i class="fas fa-copy mr-2"></i>
+                        Copy Projects
+                    </button>
+                </div>
+
+                <!-- Feedback and Support Section -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                    <a href="mailto:c2c.y3rawat@gmail.com" class="card hover:bg-primary-50 flex flex-col items-center justify-center p-6 cursor-pointer transition duration-300">
+                        <i class="fas fa-lightbulb text-4xl text-primary-500 mb-4"></i>
+                        <h3 class="text-xl font-semibold text-primary-800">Suggestions</h3>
+                        <p class="text-gray-600 text-center mt-2">Have an idea? We'd love to hear it!</p>
+                    </a>
+                    <a href="mailto:c2c.y3rawat@gmail.com" class="card hover:bg-primary-50 flex flex-col items-center justify-center p-6 cursor-pointer transition duration-300">
+                        <i class="fas fa-bug text-4xl text-red-500 mb-4"></i>
+                        <h3 class="text-xl font-semibold text-primary-800">Report a Bug</h3>
+                        <p class="text-gray-600 text-center mt-2">Found an issue? Let us know!</p>
+                    </a>
+                </div>
+
+                <!-- Buy Me a Coffee Section -->
+                <div class="card bg-yellow-50 border-2 border-yellow-400 p-6 flex flex-col items-center justify-center mt-8">
+                    <h3 class="text-2xl font-bold text-yellow-800 mb-4">Support Our Work</h3>
+                    <p class="text-gray-700 text-center mb-6">If you found this tool helpful, consider buying us a coffee!</p>
+                    <a href="https://buymeacoffee.com/y3rawatl" target="_blank" rel="noopener noreferrer" class="coffee-btn font-bold py-3 px-6 rounded-full shadow-lg transition duration-300 inline-flex items-center">
+                        <i class="fas fa-coffee mr-2"></i>
+                        Buy Me a Coffee
+                    </a>
+                </div>
+            </div>
+
+            <div class="text-center mt-8 mb-8">
+                <a href="/" class="bg-white text-primary-600 font-bold py-3 px-6 rounded-full shadow-lg hover:bg-primary-100 transition duration-300 inline-flex items-center">
+                    <i class="fas fa-home mr-2"></i>
+                    Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const clipboardBtns = document.querySelectorAll('.copy-btn');
+        clipboardBtns.forEach(btn => {
+            new ClipboardJS(btn);
+            btn.addEventListener('click', () => {
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
+                btn.classList.remove('bg-primary-600', 'hover:bg-primary-700');
+                btn.classList.add('bg-green-500', 'hover:bg-green-600');
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    btn.classList.add('bg-primary-600', 'hover:bg-primary-700');
+                }, 2000);
+            });
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Responsive navigation menu
+        const menuBtn = document.querySelector('#menu-btn');
+        const mobileMenu = document.querySelector('#mobile-menu');
+        
+        if (menuBtn && mobileMenu) {
+            menuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
+    </script>
+</body>
+</html>
