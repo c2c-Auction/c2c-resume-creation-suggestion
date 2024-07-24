@@ -18,80 +18,6 @@ app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB max file size
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-pdf_prompt = """
-You have to find these things from the resume 
-
-Basic Information
-Full Name
-Contact Information:
-Phone Number
-Email Address
-Address (if available)
-LinkedIn Profile (if available)
-Personal Website or Portfolio (if available)
-Professional Summary or Objective
-
-Education
-Degree(s) Obtained
-Field(s) of Study
-Institution(s) Attended
-Graduation Date(s)
-Academic Achievements or Honors
-
-Work Experience
-Job Title(s)
-Company Name(s)
-Location(s)
-Employment Dates
-Key Responsibilities and Achievements
-Technologies and Tools Used
-
-Skills
-Technical Skills
-Soft Skills
-Certifications and Licenses
-
-Projects
-Project Title(s)
-Description of Projects
-Technologies and Tools Used
-Role in the Project
-
-Awards and Honors
-Award Title(s)
-Issuing Organization
-Date of Award
-
-Professional Development
-Certifications
-Training Programs
-Workshops and Seminars
-
-Publications and Research
-Publication Titles
-Journal or Conference Name
-Date of Publication
-Co-authors (if any)
-
-Professional Affiliations
-Membership in Professional Organizations
-Leadership Roles in Professional Organizations
-
-Languages
-Languages Known
-Proficiency Level
-
-References
-Reference Name(s)
-Contact Information
-Relationship to the Candidate
-
-Additional Sections
-Volunteer Experience
-Hobbies and Interests
-Personal Projects
-Additional Information Relevant to the Job
-"""
 
 def ques(user_resume: str, job_description: str, work: str) -> str:
     return f"""
@@ -111,17 +37,41 @@ def ques(user_resume: str, job_description: str, work: str) -> str:
 def extract_between_asterisks(text: str) -> List[str]:
     pattern = r'\*\*(.*?)\*\*'
     return re.findall(pattern, text)
-
 def input_pdf_setup(uploaded_file) -> Tuple[str, str]:
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], uploaded_file.filename)
-    uploaded_file.save(filepath)
-    loader = PyPDFLoader(file_path=filepath)
-    pages = loader.load_and_split()
-    if len(pages) < 1:
-        raise ValueError("The PDF file has no pages.")
-    text = " ".join([page.page_content for page in pages])
-    content = f"{pdf_prompt} here is the content of resume {text}"
-    return a.final(content), filepath
+    try:
+        # Ensure the filename is secure
+        filename = secure_filename(uploaded_file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        # Save the uploaded file to the specified path
+        uploaded_file.save(filepath)
+        
+        # Load the PDF file using PyPDFLoader
+        loader = PyPDFLoader(file_path=filepath)
+        
+        # Split the PDF into pages
+        pages = loader.load_and_split()
+        
+        # Check if the PDF has no pages
+        if len(pages) < 1:
+            raise ValueError("The PDF file has no pages.")
+        
+        # Extract text content from the pages
+        text = " ".join([page.page_content for page in pages])
+        
+        
+        return a.final(text), filepath
+    
+    except FileNotFoundError:
+        raise FileNotFoundError("The specified file was not found.")
+    
+    except IOError:
+        raise IOError("An I/O error occurred while handling the PDF file.")
+    
+    except Exception as e:
+        # Catch any other exceptions and raise them with a custom message
+        raise Exception(f"An unexpected error occurred: {str(e)}")
+    
 
 def save_to_temp_file(data: Any) -> str:
     with tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8') as temp_file:
