@@ -18,7 +18,7 @@ def groq(input,key):
     chat = ChatGroq(
         temperature=0,
         model="llama3-70b-8192",
-        api_key=key
+        api_key="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"
     )
     
     return chat.invoke(input)
