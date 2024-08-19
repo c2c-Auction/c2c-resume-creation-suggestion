@@ -40,7 +40,7 @@ def extract_between_asterisks(text: str) -> List[str]:
 def input_pdf_setup(uploaded_file) -> Tuple[str, str]:
     try:
         # Ensure the filename is secure
-        filename = secure_filename(uploaded_file.filename)
+        filename = uploaded_file.filename
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         
         # Save the uploaded file to the specified path
