@@ -2,3 +2,4 @@ flask
 langchain_community
 langchain-groq
 pypdf
+gunicorn
