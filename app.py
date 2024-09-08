@@ -37,7 +37,7 @@ def ques(user_resume: str, job_description: str, work: str) -> str:
 def extract_between_asterisks(text: str) -> List[str]:
     pattern = r'\*\*(.*?)\*\*'
     return re.findall(pattern, text)
-def input_pdf_setup(uploaded_file) -> Tuple[str, str]:
+def input_pdf_setup(uploaded_file, api_key) -> Tuple[str, str]:
     try:
         # Ensure the filename is secure
         filename = uploaded_file.filename
@@ -59,8 +59,8 @@ def input_pdf_setup(uploaded_file) -> Tuple[str, str]:
         # Extract text content from the pages
         text = " ".join([page.page_content for page in pages])
         
-        
-        return a.final(text), filepath
+        # Pass the api_key to a.final()
+        return a.final(text, api_key), filepath
     
     except FileNotFoundError:
         raise FileNotFoundError("The specified file was not found.")
@@ -98,7 +98,8 @@ def run_prompts_in_parallel(*prompts: str) -> Dict[str, Any]:
 
 def process_prompt(prompt: str) -> Dict[str, Any]:
     try:
-        result = a.final(prompt)
+        groq_api_key = session.get('groq_api_key')  # Retrieve API key from session
+        result = a.final(prompt, groq_api_key)  # Pass the API key to the final function
         return json.loads(result)
     except json.JSONDecodeError:
         json_match = re.search(r'\{[\s\S]*\}', result)
@@ -109,48 +110,43 @@ def process_prompt(prompt: str) -> Dict[str, Any]:
                 return {"error": "Failed to parse JSON from response"}
         else:
             return {"error": "No valid JSON found in response"}
-        
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
+        # Get form data
         file = request.files.get('file-upload')
         job_description = request.form.get('jobDescription')
         experience = request.form.get('experience')
         additional_info = request.form.get('additionalInfo')
-        
-        if not experience:
-            flash('Please select an experience level.', 'error')
-            return render_template('index.html', job_description=job_description, additional_info=additional_info)
+        groq_api_key = request.form.get('groq_api_key')
 
-        if not job_description:
-            flash('Job description is required.', 'error')
-            return render_template('index.html', job_description=job_description, additional_info=additional_info)
+        # Process the resume
+        try:
+            resume_text, filepath = input_pdf_setup(file, groq_api_key)  # Pass groq_api_key here
+            # Construct the input for the final function
+            input_text = f"Resume: {resume_text}\nJob Description: {job_description}\nAdditional Info: {additional_info}\nExperience: {experience}"
+            result = a.final(input_text, groq_api_key)  # Pass the API key to the final function
 
-        if file and file.filename.endswith('.pdf'):
-            try:
-                extracted_data, file_path = input_pdf_setup(file)
-                extracted_data_file = save_to_temp_file(extracted_data)
-                session['extracted_data_file'] = extracted_data_file
-                session['job_description'] = job_description
-                session['experience'] = experience
-                session['additional_info'] = additional_info
-                session['file_path'] = file_path
+            # Store necessary data in session for later use
+            session['extracted_data_file'] = save_to_temp_file(resume_text)
+            session['job_description'] = job_description
+            session['experience'] = experience
+            session['additional_info'] = additional_info
+            session['groq_api_key'] = groq_api_key
 
-                question = ques(extracted_data, job_description, additional_info)
-                q = a.final(question)
+            # Generate questions
+            questions_prompt = ques(resume_text, job_description, additional_info)
+            questions_result = a.final(questions_prompt, groq_api_key)
+            questions = extract_between_asterisks(questions_result)
+            session['questions_file'] = save_to_temp_file(questions)
 
-                questions = extract_between_asterisks(q)
-                questions_file = save_to_temp_file(questions)
-                session['questions_file'] = questions_file
-                
-                return redirect(url_for('questionnaire', step=1))
-            except Exception as e:
-                flash(str(e), 'error')
-                return render_template('index.html', job_description=job_description, additional_info=additional_info)
-        else:
-            flash('Please upload a PDF file.', 'error')
-    
+            return redirect(url_for('questionnaire', step=1))
+
+        except Exception as e:
+            flash(f"An error occurred: {str(e)}", 'error')
+            return render_template('index.html', error=str(e))
+
     return render_template('index.html')
 
 @app.route('/questionnaire/<int:step>', methods=['GET', 'POST'])
