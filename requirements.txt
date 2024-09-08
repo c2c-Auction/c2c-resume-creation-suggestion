@@ -1,5 +1,5 @@
-flask
-langchain_community
-langchain-groq
-pypdf
-gunicorn
+Flask==2.0.1
+langchain_community==0.0.10
+langchain_groq==0.0.3
+PyPDF2==1.26.0
+# Add any other dependencies your project needs

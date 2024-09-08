@@ -13,7 +13,7 @@ from prompt import profile_generator_experience, profile_generator_prompt_no_exp
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
-app.config['UPLOAD_FOLDER'] = '/tmp'
+app.config['UPLOAD_FOLDER'] = tempfile.gettempdir()
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB max file size
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -82,10 +82,10 @@ def load_from_temp_file(file_path: str) -> Any:
     with open(file_path, 'r', encoding='utf-8') as file:
         return json.load(file)
 
-def run_prompts_in_parallel(*prompts: str) -> Dict[str, Any]:
+def run_prompts_in_parallel(*prompts: str, api_key: str) -> Dict[str, Any]:
     results = {}
     with ThreadPoolExecutor(max_workers=min(len(prompts), os.cpu_count() or 1)) as executor:
-        future_to_prompt = {executor.submit(process_prompt, prompt): prompt for prompt in prompts}
+        future_to_prompt = {executor.submit(process_prompt, prompt, api_key): prompt for prompt in prompts}
         for future in as_completed(future_to_prompt):
             prompt = future_to_prompt[future]
             try:
@@ -96,10 +96,9 @@ def run_prompts_in_parallel(*prompts: str) -> Dict[str, Any]:
             results[prompt] = result
     return results
 
-def process_prompt(prompt: str) -> Dict[str, Any]:
+def process_prompt(prompt: str, api_key: str) -> Dict[str, Any]:
     try:
-        groq_api_key = session.get('groq_api_key')  # Retrieve API key from session
-        result = a.final(prompt, groq_api_key)  # Pass the API key to the final function
+        result = a.final(prompt, api_key)  # Pass the API key to the final function
         return json.loads(result)
     except json.JSONDecodeError:
         json_match = re.search(r'\{[\s\S]*\}', result)
@@ -179,6 +178,7 @@ def result():
         additional_info = session.get('additional_info', '')
         inputs = session.get('inputs', {})
         questions = load_from_temp_file(session.get('questions_file'))
+        groq_api_key = session.get('groq_api_key')  # Retrieve API key from session
 
         # Prepare other questions
         other_questions = {questions[i]: inputs.get(f'input{i+1}', '') for i in range(len(questions))}
@@ -191,7 +191,7 @@ def result():
         prompts = generator_func(extracted_data, job_description, additional_info, other_questions)
 
         # Run prompts in parallel
-        results = run_prompts_in_parallel(*prompts)
+        results = run_prompts_in_parallel(*prompts, api_key=groq_api_key)  # Pass API key here
 
         # Prepare data for template
         template_data = {
@@ -215,5 +215,10 @@ def result():
 def edit_input(step: int):
     return redirect(url_for('questionnaire', step=step))
 
+# Add this at the end of the file
+from werkzeug.middleware.proxy_fix import ProxyFix
+
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
 if __name__ == '__main__':
-    app.run(debug=True, port=3313)
+    app.run()
